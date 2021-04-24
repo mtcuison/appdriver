@@ -4,9 +4,12 @@ import org.rmj.appdriver.iface.iGCrypt;
 
 public class testGCrypt {
     public static void main(String [] args){
-        iGCrypt instance = new GCryptFactory().make(GCryptFactory.CrypType.GCrypt);
-        instance.setHexCrypt(0);
-        System.out.println(instance.Decrypt("_Â", "08220326"));
-        System.out.println(instance.Decrypt("m×£\"ÎÑr¸>§", "08220326"));
+        iGCrypt loCrypt = new GCryptFactory().make(GCryptFactory.CrypType.AESCrypt);
+        String lsValue = "Michael Cuison";
+        String lsSalt = "2020";
+        lsValue = loCrypt.Encrypt(lsValue, lsSalt);
+        System.out.println("ENCRYPTED VALUE: " + lsValue);
+        lsValue = loCrypt.Decrypt(lsValue, lsSalt);
+        System.out.println("DECRYPTED VALUE: " + lsValue);
     }
 }

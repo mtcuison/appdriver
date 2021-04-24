@@ -13,9 +13,10 @@ import org.rmj.apprdiver.util.WebFile;
  */
 public class testImage64 {
     public static void main(String [] args){
-        String lsFileIn = "D:/sample.png";
-        String lsFileOut = "output.png";
         
+        String lsFileOut = "output.jpg";
+        
+        String lsFileIn = "D:/SECB.jpg";
         String lsMD5xx = WebFile.md5Hash(lsFileIn);
         String lsImg64 = WebFile.FileToBase64(lsFileIn);
         

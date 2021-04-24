@@ -5,6 +5,7 @@ package org.rmj.appdriver.iface;
 
 import java.sql.Date;
 import java.sql.ResultSet;
+import java.sql.Timestamp;
 
 public interface iGRider {
     public void setGConnection(iGConnection foValue);
@@ -20,7 +21,7 @@ public interface iGRider {
     public String getAppConfig(String fsValue);
     public String getBranchConfig(String fsValue);
     public String getSysConfig(String fsValue);
-    public Date getServerDate();
+    public Timestamp getServerDate();
     
     public boolean lockUser();
     public boolean loginUser(String fsProdctID);

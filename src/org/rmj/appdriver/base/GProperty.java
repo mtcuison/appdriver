@@ -6,6 +6,7 @@ package org.rmj.appdriver.base;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,6 +38,17 @@ public class GProperty implements iGProperty{
       
         try {
             prop.load(new FileInputStream(fsFile));
+            psProductID = fsProdctID;
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+    
+    public GProperty(InputStream foValue, String fsProdctID){
+        prop = new Properties();
+      
+        try {
+            prop.load(foValue);
             psProductID = fsProdctID;
         } catch (IOException ex) {
             ex.printStackTrace();

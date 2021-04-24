@@ -9,11 +9,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.rmj.appdriver.iface.iGConnection;
 import org.rmj.appdriver.iface.iGCrypt;
-import org.rmj.apprdiver.util.SQLUtil;
 
 public class GConnection implements iGConnection{
     private final String SIGNATURE = "08220326";
@@ -184,7 +181,7 @@ public class GConnection implements iGConnection{
     }
 
     @Override
-    public long executeUpdate(String fsValue, String fsTableNme, String fsBranchCd, String fsDesinat) {
+    public long executeUpdate(String fsValue) {
         Statement loSQL = null;
         Statement loLog = null;
         long lnRecord = 0;
@@ -194,81 +191,17 @@ public class GConnection implements iGConnection{
             return lnRecord;
         }
         
-        if (fsTableNme.isEmpty()){
-            try {
-                loSQL = poConn.createStatement();
-                lnRecord = loSQL.executeUpdate(fsValue);
-            } catch (SQLException ex) {
-                setMessage(ex.getMessage());
-                lnRecord = 0;
-            }finally{
-                MiscUtil.close(loSQL);
-            }
-            
-            return lnRecord;
-        } else {
-            if (psUserIDxx == null || psUserIDxx.isEmpty()){
-                setMessage("UNSET User ID.");
-                return -1;
-            }
-            
-            //Determine what branch code will be use
-            //Use the branch code of the main office if online
-            //Use the branch code of the current branch if not
-            String lsBranchCD = pbIsOnline ? "M001" : fsBranchCd;
-      
-            try {
-                //Execute the sql statement
-                loSQL = poConn.createStatement();
-                System.out.println(fsValue);
-                lnRecord = loSQL.executeUpdate(fsValue);
-         
-                Timestamp tme = getServerDate();
-
-                StringBuilder lsSQL = new StringBuilder();
-                StringBuilder lsNme = new StringBuilder();
-
-                //set fieldnames
-                lsNme.append("(sTransNox");
-                lsNme.append(", sBranchCd");
-                lsNme.append(", sStatemnt");
-                lsNme.append(", sTableNme");
-                lsNme.append(", sDestinat");
-                lsNme.append(", sModified");
-                lsNme.append(", dEntryDte");
-                lsNme.append(", dModified)");
-         
-                //set values
-                lsSQL.append("(" + SQLUtil.toSQL(MiscUtil.getNextCode("xxxReplicationLog", "sTransNox", true, poConn, lsBranchCD)));
-                lsSQL.append(", " + SQLUtil.toSQL(fsBranchCd));
-                lsSQL.append(", " + SQLUtil.toSQL(fsValue));
-                lsSQL.append(", " + SQLUtil.toSQL(fsTableNme));
-                lsSQL.append(", " + SQLUtil.toSQL(fsDesinat));
-                lsSQL.append(", " + SQLUtil.toSQL(psUserIDxx));
-                lsSQL.append(", " + SQLUtil.toSQL(tme));
-                lsSQL.append(", " + SQLUtil.toSQL(tme) + ")");
-
-                loLog = poConn.createStatement();
-                loLog.executeUpdate("INSERT INTO xxxReplicationLog" + lsNme.toString() + " VALUES" + lsSQL.toString());
-         
-                tme = null;
-                lsSQL = null;
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-                Logger.getLogger(GRider.class.getName()).log(Level.SEVERE, null, ex);
-                setMessage(ex.getMessage());
-                lnRecord = 0;
-            } finally{
-                MiscUtil.close(loLog);
-                MiscUtil.close(loSQL);
-
-                loLog = null;
-                loSQL = null;
-
-            }
-            
-            return lnRecord;
+        try {
+            loSQL = poConn.createStatement();
+            lnRecord = loSQL.executeUpdate(fsValue);
+        } catch (SQLException ex) {
+            setMessage(ex.getMessage());
+            lnRecord = 0;
+        }finally{
+            MiscUtil.close(loSQL);
         }
+
+        return lnRecord;
     }
 
     @Override
@@ -297,9 +230,16 @@ public class GConnection implements iGConnection{
         String lsDBSrvrMn = poProp.getMainServer();
         String lsDBSrvrNm = poProp.getDBHost();
         String lsDBNameXX = poProp.getDBName();
-        String lsDBUserNm = poCrypt.Decrypt(poProp.getUser(), SIGNATURE);
-        String lsPassword = poCrypt.Decrypt(poProp.getPassword(), SIGNATURE);
         String lsDBPortNo = poProp.getPort();
+        
+        String lsDBUserNm = "";
+        String lsPassword = "";
+        
+        if (!(poProp.getUser() == null || poProp.getUser().isEmpty()))
+            lsDBUserNm = poCrypt.Decrypt(poProp.getUser(), SIGNATURE);
+        
+        if (!(poProp.getPassword() == null || poProp.getPassword().isEmpty()))
+            lsPassword = poCrypt.Decrypt(poProp.getPassword(), SIGNATURE);
         
         Connection loCon = null;        
         

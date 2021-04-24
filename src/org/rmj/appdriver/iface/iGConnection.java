@@ -27,7 +27,7 @@ public interface iGConnection {
     public boolean rollbackTrans();
     public Connection getConnection();
     public ResultSet executeQuery(String fsValue);
-    public long executeUpdate(String fsValue, String fsTableNme, String fsBranchCd, String fsDesinat);
+    public long executeUpdate(String fsValue);
    
     public String getMessage();
 

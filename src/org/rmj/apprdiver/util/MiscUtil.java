@@ -340,9 +340,11 @@ public class MiscUtil {
         String fsFieldNme,
         boolean fbYearFormat,
         java.sql.Connection foCon,
-        String fsBranchCd){
+        String fsBranchCd,
+        int fnFieldLen,
+        boolean fbSeries){
         
-        String lsNextCde="";
+        String lsNextCde = "";
         int lnNext;
         String lsPref = fsBranchCd;
 
@@ -352,7 +354,8 @@ public class MiscUtil {
 
         if(fbYearFormat){
             try {
-                if(foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLiteJDBC")){
+                if(foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLiteJDBC") ||
+                        foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLDroid")){
                     lsSQL = "SELECT STRFTIME('%Y', DATETIME('now','localtime'))";
                 }else{
                     //assume that default database is MySQL ODBC
@@ -365,81 +368,7 @@ public class MiscUtil {
                 System.out.println(loRS.getString(1));
                 lsPref = lsPref + loRS.getString(1).substring(2);
                 System.out.println(lsPref);
-            } 
-            catch (SQLException ex) {
-                ex.printStackTrace();
-                Logger.getLogger(MiscUtil.class.getName()).log(Level.SEVERE, null, ex);
-                return "";
-            }
-            finally{
-                close(loRS);
-                close(loStmt);
-            }
-        }
-      
-        lsSQL = "SELECT " + fsFieldNme
-                + " FROM " + fsTableNme
-                + " ORDER BY " + fsFieldNme + " DESC "
-                + " LIMIT 1";
-
-        if(!lsPref.isEmpty())
-            lsSQL = addCondition(lsSQL, fsFieldNme + " LIKE " + SQLUtil.toSQL(lsPref + "%"));
-      
-        try {
-            loStmt = foCon.createStatement();
-            loRS = loStmt.executeQuery(lsSQL);
-            if(loRS.next()){
-               lnNext = Integer.parseInt(loRS.getString(1).substring(lsPref.length()));
-            } else
-               lnNext = 0;
-
-            lsNextCde = lsPref + StringUtils.leftPad(String.valueOf(lnNext + 1), loRS.getMetaData().getPrecision(1) - lsPref.length() , "0");
-
-        } 
-        catch (SQLException ex) {
-            ex.printStackTrace();
-            Logger.getLogger(MiscUtil.class.getName()).log(Level.SEVERE, null, ex);
-            lsNextCde = "";
-        }
-        finally{
-            close(loRS);
-            close(loStmt);
-        }
-
-        return lsNextCde;
-    }
-
-    public static String getNextCode(
-        String fsTableNme,
-        String fsFieldNme,
-        boolean fbYearFormat,
-        java.sql.Connection foCon,
-        String fsBranchCd,
-        String fsFilter){
-        
-        String lsNextCde="";
-        int lnNext;
-        String lsPref = fsBranchCd;
-
-        String lsSQL = null;
-        Statement loStmt = null;
-        ResultSet loRS = null;
-
-        if(fbYearFormat){
-            try {
-                if(foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLiteJDBC")){
-                    lsSQL = "SELECT STRFTIME('%Y', DATETIME('now','localtime'))";
-                }else{
-                    //assume that default database is MySQL ODBC
-                    lsSQL = "SELECT YEAR(CURRENT_TIMESTAMP)";
-                }          
-                
-                loStmt = foCon.createStatement();
-                loRS = loStmt.executeQuery(lsSQL);
-                loRS.next();
-                lsPref = lsPref + loRS.getString(1).substring(2);
-            }  catch (SQLException ex) {
-                ex.printStackTrace();
+            } catch (SQLException ex) {
                 Logger.getLogger(MiscUtil.class.getName()).log(Level.SEVERE, null, ex);
                 return "";
             } finally{
@@ -447,30 +376,38 @@ public class MiscUtil {
                 close(loStmt);
             }
         }
-
-        lsSQL = "SELECT " + fsFieldNme
-                + " FROM " + fsTableNme
-                + " ORDER BY " + fsFieldNme + " DESC "
-                + " LIMIT 1";
-
-        if(!lsPref.isEmpty())
-            lsSQL = addCondition(lsSQL, fsFieldNme + " LIKE " + SQLUtil.toSQL(lsPref + "%"));
-         
-        lsSQL = addCondition(lsSQL, fsFilter);
-      
         try {
+            if (!fbSeries){
+                lsSQL = "SELECT " + fsFieldNme
+                    + " FROM " + fsTableNme
+                    + " ORDER BY " + fsFieldNme + " DESC "
+                    + " LIMIT 1";
+
+                if(!lsPref.isEmpty())
+                    lsSQL = addCondition(lsSQL, fsFieldNme + " LIKE " + SQLUtil.toSQL(lsPref + "%"));
+            } else {
+                if(foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLiteJDBC") ||
+                        foCon.getMetaData().getDriverName().equalsIgnoreCase("SQLDroid")){
+                    lsSQL = "SELECT SUBSTR(" + fsFieldNme + ", " + lsPref.length() + ", " + (fnFieldLen - lsPref.length()) + ")"
+                            + " FROM " + fsTableNme
+                            + " ORDER BY " + fsFieldNme + " DESC "
+                            + " LIMIT 1";
+                }else{
+                    lsSQL = "SELECT RIGHT(" + fsFieldNme + ", " + (fnFieldLen - lsPref.length()) + ")"
+                            + " FROM " + fsTableNme
+                            + " ORDER BY " + fsFieldNme + " DESC "
+                            + " LIMIT 1";
+                }        
+            }
+            
             loStmt = foCon.createStatement();
             loRS = loStmt.executeQuery(lsSQL);
-         
             if(loRS.next()){
                 lnNext = Integer.parseInt(loRS.getString(1).substring(lsPref.length()));
             } else
                 lnNext = 0;
-
-            lsNextCde = lsPref + StringUtils.leftPad(String.valueOf(lnNext + 1), loRS.getMetaData().getPrecision(1) - lsPref.length() , "0");
-
-        }  catch (SQLException ex) {
-            ex.printStackTrace();
+            lsNextCde = lsPref + StringUtils.leftPad(String.valueOf(lnNext + 1), fnFieldLen - lsPref.length(), "0");
+        } catch (SQLException ex) {
             Logger.getLogger(MiscUtil.class.getName()).log(Level.SEVERE, null, ex);
             lsNextCde = "";
         } finally{

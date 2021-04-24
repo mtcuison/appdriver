@@ -3,11 +3,15 @@
  */
 package org.rmj.appdriver.base;
 
+import java.sql.Connection;
 import java.sql.Date;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import org.rmj.appdriver.iface.iGConnection;
 import org.rmj.appdriver.iface.iGCrypt;
 import org.rmj.appdriver.iface.iGRider;
+import org.rmj.apprdiver.util.MiscUtil;
 
 public class GRider implements iGRider{
     iGConnection poConn;
@@ -66,8 +70,50 @@ public class GRider implements iGRider{
     }
 
     @Override
-    public Date getServerDate() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public Timestamp getServerDate() {
+        ResultSet loRS = null;
+        Timestamp loTimeStamp = null;
+        String lsSQL = "";
+
+        setMessage("");
+
+        try{
+            Connection loConn = poConn.getConnection();
+            
+            if(loConn == null){
+                setMessage("Connection is not set.");
+                return loTimeStamp;
+            }
+
+            if(loConn.getMetaData().getDriverName().equalsIgnoreCase("SQLite JDBC")){
+                lsSQL = "SELECT DATETIME('now','localtime')";
+                
+                loRS = loConn.createStatement()
+                     .executeQuery(lsSQL);
+                //position record pointer to the first record
+                loRS.next();
+                //assigned timestamp
+
+                loTimeStamp = Timestamp.valueOf(loRS.getString(1));
+            }else{
+                //assume that default database is MySQL ODBC
+                lsSQL = "SELECT SYSDATE()";
+                
+                loRS = loConn.createStatement()
+                    .executeQuery(lsSQL);
+                //position record pointer to the first record
+                loRS.next();
+                //assigned timestamp
+                loTimeStamp = loRS.getTimestamp(1);
+            }            
+        }
+        catch(SQLException ex){
+            ex.printStackTrace();
+            setMessage(ex.getSQLState());
+        } finally{
+            MiscUtil.close(loRS);
+        }
+        return loTimeStamp;
     }
 
     @Override
@@ -97,22 +143,22 @@ public class GRider implements iGRider{
 
     @Override
     public boolean beginTrans() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return poConn.beginTrans();
     }
 
     @Override
     public boolean commitTrans() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return poConn.commitTrans();
     }
 
     @Override
     public boolean rollbackTrans() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return poConn.rollbackTrans();
     }
 
     @Override
     public ResultSet executeQuery(String fsValue) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return poConn.executeQuery(fsValue);
     }
 
     @Override

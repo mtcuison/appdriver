@@ -44,8 +44,8 @@ public class MySQLAES implements iGCrypt{
     public String Decrypt(String fsValue, String fsSalt) {
         try {
             Cipher decryptCipher = Cipher.getInstance("AES");
-            decryptCipher.init(Cipher.DECRYPT_MODE, generateMySQLAESKey(fsValue, "UTF-8"));
-            return new String(decryptCipher.doFinal(Hex.decodeHex(fsSalt.toCharArray())));
+            decryptCipher.init(Cipher.DECRYPT_MODE, generateMySQLAESKey(fsSalt, "UTF-8"));
+            return new String(decryptCipher.doFinal(Hex.decodeHex(fsValue.toCharArray())));
         } catch (NoSuchAlgorithmException ex) {
             ex.printStackTrace();
         } catch (NoSuchPaddingException ex) {

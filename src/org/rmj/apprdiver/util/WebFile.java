@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -26,6 +28,7 @@ public class WebFile {
     private static final String UPLOAD_IMAGE_FILE = "https://webfsgk.guanzongroup.com.ph/x-api/v1.0/edocsys/upload_edoc_file.php";
     private static final String DOWNLOAD_IMAGE_FILE = "https://webfsgk.guanzongroup.com.ph/x-api/v1.0/edocsys/download_edoc_file.php";
     private static final String UPDATE_FILE_OWNER = "https://webfsgk.guanzongroup.com.ph/x-api/v1.0/edocsys/update_edoc_owner.php";
+    private static final String CHECK_UPLOADED_FILE = "https://webfsgk.guanzongroup.com.ph/x-api/v1.0/edocsys/check_edoc_file.php";
     
     /**
      * UploadFile
@@ -68,7 +71,7 @@ public class WebFile {
         loJSON.put("g-edoc-srno", fsSourceNo);
         loJSON.put("g-edoc-unqe", fsUniqueVl);
         
-        return sendRequest(UPLOAD_IMAGE_FILE, fsAccessCd, loJSON);
+            return sendRequest(UPLOAD_IMAGE_FILE, fsAccessCd, loJSON);
     }
     
     /**
@@ -104,6 +107,37 @@ public class WebFile {
         loJSON.put("g-edoc-unqe", fsUniqueVl);
         
         return sendRequest(DOWNLOAD_IMAGE_FILE, fsAccessCd, loJSON);
+    }
+    
+    /**
+     * CheckFile
+     * 
+     * Check image with its corresponding information
+     * 
+     * @param fsAccessCd    Access Token
+     * @param fsFileType    File Type
+     * @param fsFileOwnr    Universal Identifier for this file (sSerialID)
+     * @param fsFileName    File Name
+     * @param fsSourceCd    Source Code
+     * @param fsSourceNo    Source No/Reference No
+     * @param fsUniqueVl    Additional Information that will make this file unique
+     * 
+     * @return {"result":"success","payload":"{"filename":"File Name","hash":"Hash value of file","data":"64 bit encoded data"}"} / {"result":"success","error":"{"code":0,"message":""}"}
+     */
+    public static JSONObject CheckFile(
+            String fsAccessCd,
+            String fsFileType,
+            String fsBranchCd,
+            String fsSourceCd,
+            String fsSourceNo){
+        
+        JSONObject loJSON = new JSONObject();
+        loJSON.put("g-edoc-type", fsFileType);
+        loJSON.put("g-edoc-ownr", fsBranchCd);
+        loJSON.put("g-edoc-srcd", fsSourceCd);
+        loJSON.put("g-edoc-srno", fsSourceNo);
+        
+        return sendRequest(CHECK_UPLOADED_FILE, fsAccessCd, loJSON);
     }
     
     /**
@@ -159,7 +193,8 @@ public class WebFile {
             byte byteArray[] = new byte[(int)f.length()];
             fis.read(byteArray);
             
-            lsValue = Base64.encodeBase64String(byteArray);
+            //lsValue = Base64.encodeBase64String(byteArray);
+            lsValue = new String(Base64.encodeBase64(byteArray));
 
             fis.close();
         } catch (FileNotFoundException ex) {
@@ -188,7 +223,9 @@ public class WebFile {
         try {            
             //output file
             FileOutputStream fos = new FileOutputStream(fsSavePath + fsImgHashx);
-            byte byteArray[] = Base64.decodeBase64(fsImage64x);
+            //byte byteArray[] = Base64.decodeBase64(fsImage64x);
+            byte byteArray[] = Base64.decodeBase64(fsImage64x.getBytes());
+            
             fos.write(byteArray);
             fos.close();
             
@@ -225,7 +262,8 @@ public class WebFile {
         String md5 = "";
         try{
             FileInputStream fis = new FileInputStream(new File(fsFilePath));
-            md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
+            //md5 = org.apache.commons.codec.digest.DigestUtils.md5Hex(fis);
+            md5 = new String (Hex.encodeHex(DigestUtils.md5(fis)));
             fis.close();     
         }catch(Exception ex){
             ex.printStackTrace();
@@ -243,7 +281,7 @@ public class WebFile {
         JSONObject loJSON = new JSONObject();
         
         try {
-            String response = WebClient.sendHTTP(fsURL, "", (HashMap<String, String>) headers);
+            String response = WebClient.sendHTTP(fsURL, foParam.toJSONString(), (HashMap<String, String>) headers);
 
             if(response == null){
                 JSONObject loErr = new JSONObject();
